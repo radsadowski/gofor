@@ -4,6 +4,7 @@ import (
 	"fmt"
 	iping "goforit/internal/ping"
 
+	"github.com/go-ping/ping"
 	"github.com/spf13/cobra"
 )
 
@@ -36,11 +37,33 @@ func validateArguments(args []string) error {
 
 func runPingCommand(cmd *cobra.Command, subject string) {
 	timeout, _ := cmd.Flags().GetDuration("timeout")
-	interval, _ := cmd.Flags().GetDuration("Interval")
-	fmt.Println(timeout)
-	fmt.Println(interval)
+	interval, _ := cmd.Flags().GetDuration("interval")
 	// try to ping the subject until the timeout is reached
 	// wait the interval value between next ping
+	// c := make(chan bool)
+
+	// go func() {
+	fmt.Println("connecting to peer...")
+	pinger, _ := ping.NewPinger(subject)
+	pinger.Count = 1
+	pinger.OnFinish = func(stats *ping.Statistics) {
+		if stats.PacketsRecv == 0 {
+			fmt.Println("failed to connect.")
+			return
+		}
+		fmt.Println("finished")
+	}
+	// pinger.OnRecv = func(pkt *ping.Packet) {
+	// 	fmt.Printf("%d bytes from %s: icmp_seq=%d time=%v\n",
+	// 		pkt.Nbytes, pkt.IPAddr, pkt.Seq, pkt.Rtt)
+	// }
+	pinger.Timeout = timeout
+	pinger.Interval = interval
+	pinger.Debug = true
+	err := pinger.Run() // Blocks until finished.
+	if err != nil {
+		panic(err)
+	}
 }
 
 var pingCommand = &cobra.Command{
