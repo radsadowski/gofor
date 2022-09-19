@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	iping "goforit/internal/ping"
+	"goforit/internal/validation"
 
 	"github.com/go-ping/ping"
 	"github.com/spf13/cobra"
@@ -28,7 +28,7 @@ func validateArguments(args []string) error {
 		return &NoArgumentError{}
 	}
 	subject := args[0]
-	if !iping.IsValidIPAddress(subject) && !iping.IsValidHostname(subject) {
+	if !validation.IsValidIPAddress(subject) && !validation.IsValidHostname(subject) {
 		return &InvalidSubjectError{subject}
 	}
 
@@ -59,7 +59,7 @@ func runPingCommand(cmd *cobra.Command, subject string) bool {
 }
 
 var pingCommand = &cobra.Command{
-	Use:   "ping [subject]",
+	Use:   "ping subject",
 	Short: "Ping the subject",
 	Long:  "Send ICMP packet to a IPv4, IPv6 or a hostname subject",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -74,6 +74,7 @@ var pingCommand = &cobra.Command{
 	Args: func(cmd *cobra.Command, args []string) error {
 		return validateArguments(args)
 	},
+	Example: "- gofor ping 192.168.1.1 --timeout=10s --interval=2s\n- gofor ping google.com -t 5s -i 2s",
 }
 
 func init() {
