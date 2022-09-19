@@ -35,43 +35,41 @@ func validateArguments(args []string) error {
 	return nil
 }
 
-func runPingCommand(cmd *cobra.Command, subject string) {
+func runPingCommand(cmd *cobra.Command, subject string) bool {
 	timeout, _ := cmd.Flags().GetDuration("timeout")
 	interval, _ := cmd.Flags().GetDuration("interval")
-	// try to ping the subject until the timeout is reached
-	// wait the interval value between next ping
-	// c := make(chan bool)
+	var status bool
 
-	// go func() {
-	fmt.Println("connecting to peer...")
 	pinger, _ := ping.NewPinger(subject)
-	pinger.Count = 1
-	pinger.OnFinish = func(stats *ping.Statistics) {
-		if stats.PacketsRecv == 0 {
-			fmt.Println("failed to connect.")
-			return
-		}
-		fmt.Println("finished")
-	}
-	// pinger.OnRecv = func(pkt *ping.Packet) {
-	// 	fmt.Printf("%d bytes from %s: icmp_seq=%d time=%v\n",
-	// 		pkt.Nbytes, pkt.IPAddr, pkt.Seq, pkt.Rtt)
-	// }
 	pinger.Timeout = timeout
 	pinger.Interval = interval
 	pinger.Debug = true
-	err := pinger.Run() // Blocks until finished.
-	if err != nil {
-		panic(err)
+	pinger.OnFinish = func(stats *ping.Statistics) {
+		if stats.PacketsRecv == 0 {
+			status = false
+		}
 	}
+	pinger.OnRecv = func(pkt *ping.Packet) {
+		pinger.Stop()
+		status = true
+	}
+
+	pinger.Run()
+	return status
 }
 
 var pingCommand = &cobra.Command{
-	Use:   "ping",
+	Use:   "ping [subject]",
 	Short: "Ping the subject",
 	Long:  "Send ICMP packet to a IPv4, IPv6 or a hostname subject",
 	Run: func(cmd *cobra.Command, args []string) {
-		runPingCommand(cmd, args[0])
+		fmt.Println("connecting to the subject...")
+		isAvailable := runPingCommand(cmd, args[0])
+		if !isAvailable {
+			fmt.Println("timeout - subject is not available.")
+			return
+		}
+		fmt.Println("subject available.")
 	},
 	Args: func(cmd *cobra.Command, args []string) error {
 		return validateArguments(args)
