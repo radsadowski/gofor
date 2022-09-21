@@ -35,12 +35,12 @@ func validateArguments(args []string) error {
 	return nil
 }
 
-func runPingCommand(cmd *cobra.Command, subject string) bool {
+func runPingCommand(cmd *cobra.Command, host string) bool {
 	timeout, _ := cmd.Flags().GetDuration("timeout")
 	interval, _ := cmd.Flags().GetDuration("interval")
 	var status bool
 
-	pinger, _ := ping.NewPinger(subject)
+	pinger, _ := ping.NewPinger(host)
 	pinger.Timeout = timeout
 	pinger.Interval = interval
 	pinger.Debug = true
@@ -59,17 +59,17 @@ func runPingCommand(cmd *cobra.Command, subject string) bool {
 }
 
 var pingCommand = &cobra.Command{
-	Use:   "ping subject",
-	Short: "Ping the subject",
+	Use:   "ping host",
+	Short: "Ping the host",
 	Long:  "Send ICMP packet to a IPv4, IPv6 or a hostname subject",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("connecting to the subject...")
+		fmt.Println("Connecting to the subject...")
 		isAvailable := runPingCommand(cmd, args[0])
 		if !isAvailable {
-			fmt.Println("timeout - subject is not available.")
+			fmt.Println("Timeout - host is not available.")
 			return
 		}
-		fmt.Println("subject available.")
+		fmt.Println("host is available.")
 	},
 	Args: func(cmd *cobra.Command, args []string) error {
 		return validateArguments(args)
